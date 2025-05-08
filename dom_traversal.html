@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DOM Traversal App</title>
+  <style>
+    /* Global styles for the body */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    /* Header styles for profile information */
+    header {
+      border-bottom: 2px solid #000;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+    }
+
+    /* Tree view container styles */
+    .tree {
+      margin: 20px 0;
+    }
+
+    /* Styles for the tree list items (li) */
+    ul {
+      list-style-type: none;
+      padding-left: 20px;
+    }
+
+    li {
+      cursor: pointer;
+      padding: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    /* Distinguishing styles for different hierarchy levels */
+    li.grandparent {
+      background-color: #f2dede;
+    }
+
+    li.parent {
+      background-color: #d9edf7;
+    }
+
+    li.child {
+      background-color: #dff0d8;
+    }
+
+    /* Highlight and selected node styles */
+    li.selected,
+    li.highlight {
+      background-color: #007bff !important;
+      color: white;
+    }
+
+    /* Control button styles */
+    .controls {
+      margin-top: 20px;
+    }
+
+    .controls button {
+      margin: 5px;
+      padding: 10px 15px;
+      border: none;
+      background-color: #17a2b8;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .controls button:hover {
+      background-color: #138496;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Profile Information Section -->
+  <header>
+    <h2>Profile Information</h2>
+    <p><strong>Complete Name:</strong> John Doe</p>
+    <p><strong>Sex:</strong> Male</p>
+    <p><strong>Address:</strong> 123 Sample Street, City, Country</p>
+    <p><strong>Course, Year, and Section:</strong> BS Computer Science, 3rd Year, Section A</p>
+    <p><strong>Name of School:</strong> Sample University</p>
+    <p><strong>Semester and Academic Year:</strong> 2nd Semester, AY 2024–2025</p>
+    <p><strong>Subject Code and Title:</strong> CS301 - Web Development</p>
+    <p><strong>Name of Subject Instructor:</strong> Prof. Jane Smith</p>
+  </header>
+
+  <h1>Interactive DOM Traversal Tree</h1>
+
+  <!-- DOM Tree Structure -->
+  <div class="tree">
+    <ul id="grandparent">
+      <li class="grandparent" draggable="true">
+        Grandparent
+        <ul>
+          <li class="parent" draggable="true">
+            Parent 1
+            <ul>
+              <li class="child" draggable="true">Child 1.1</li>
+              <li class="child" draggable="true">Child 1.2</li>
+            </ul>
+          </li>
+          <li class="parent" draggable="true">
+            Parent 2
+            <ul>
+              <li class="child" draggable="true">Child 2.1</li>
+              <li class="child" draggable="true">Child 2.2</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Control Buttons for Traversal and Manipulation -->
+  <div class="controls">
+    <button onclick="selectFirstChild()">First Child</button>
+    <button onclick="selectParent()">Parent</button>
+    <button onclick="selectNextSibling()">Next Sibling</button>
+    <button onclick="selectPreviousSibling()">Previous Sibling</button>
+    <button onclick="addChild()">Add Child</button>
+    <button onclick="deleteNode()">Delete Node</button>
+  </div>
+
+  <script>
+    // JavaScript for DOM Traversal and Manipulation
+
+    // Initialize selected node to the grandparent
+    let selectedNode = document.querySelector("#grandparent > li");
+    highlight(selectedNode);
+
+    // Highlight the selected node with 'selected' class
+    function highlight(node) {
+      document.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
+      if (node) {
+        node.classList.add('selected');
+        selectedNode = node;
+        localStorage.setItem('selectedPath', getNodePath(node));
+      }
+    }
+
+    // Select the first child of the current selected node
+    function selectFirstChild() {
+      const child = selectedNode.querySelector("ul > li");
+      if (child) highlight(child);
+      else alert("No child node.");
+    }
+
+    // Select the parent of the current selected node
+    function selectParent() {
+      const parent = selectedNode.parentElement.closest("li");
+      if (parent) highlight(parent);
+      else alert("No parent node.");
+    }
+
+    // Select the next sibling of the current selected node
+    function selectNextSibling() {
+      let sibling = selectedNode.nextElementSibling;
+      if (sibling) highlight(sibling);
+      else alert("No next sibling.");
+    }
+
+    // Select the previous sibling of the current selected node
+    function selectPreviousSibling() {
+      let sibling = selectedNode.previousElementSibling;
+      if (sibling) highlight(sibling);
+      else alert("No previous sibling.");
+    }
+
+    // Add a new child node to the selected node
+    function addChild() {
+      if (selectedNode.classList.contains('grandparent')) {
+        const newParent = document.createElement('li');
+        newParent.className = 'parent';
+        newParent.textContent = `Parent ${selectedNode.querySelectorAll(':scope > ul > li.parent').length + 1}`;
+
+        const newUl = document.createElement('ul');
+        for (let i = 1; i <= 2; i++) {
+          const child = document.createElement('li');
+          child.className = 'child';
+          child.textContent = `Child ${i}`;
+          child.setAttribute('draggable', 'true');
+          child.addEventListener('click', e => {
+            e.stopPropagation();
+            highlight(child);
+          });
+          newUl.appendChild(child);
+        }
+        newParent.appendChild(newUl);
+        newParent.setAttribute('draggable', 'true');
+        newParent.addEventListener('click', e => {
+          e.stopPropagation();
+          highlight(newParent);
+        });
+        let parentList = selectedNode.querySelector('ul') || selectedNode.appendChild(document.createElement('ul'));
+        parentList.appendChild(newParent);
+
+      } else if (selectedNode.classList.contains('parent')) {
+        let ul = selectedNode.querySelector("ul");
+        if (!ul) {
+          ul = document.createElement("ul");
+          selectedNode.appendChild(ul);
+        }
+
+        const newLi = document.createElement("li");
+        newLi.textContent = `Child ${ul.children.length + 1}`;
+        newLi.className = 'child';
+        newLi.setAttribute("draggable", "true");
+        newLi.addEventListener('click', e => {
+          e.stopPropagation();
+          highlight(newLi);
+        });
+        ul.appendChild(newLi);
+
+      } else if (selectedNode.classList.contains('child')) {
+        alert("Cannot add child to a child node.");
+      }
+    }
+
+    // Delete the selected node from the DOM
+    function deleteNode() {
+      if (!selectedNode.parentElement.closest("li")) {
+        alert("Cannot delete grandparent node.");
+        return;
+      }
+
+      const nextSelect = selectedNode.nextElementSibling || selectedNode.previousElementSibling || selectedNode.parentElement.closest("li");
+      const toRemove = selectedNode;
+      highlight(nextSelect);
+      toRemove.remove();
+    }
+
+    // Select a node when clicked
+    document.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', e => {
+        e.stopPropagation();
+        highlight(li);
+      });
+    });
+
+    // Save the selected node's path in localStorage
+    function getNodePath(node) {
+      const path = [];
+      while (node && node.tagName === "LI") {
+        let index = 0;
+        let sibling = node;
+        while ((sibling = sibling.previousElementSibling) != null) index++;
+        path.unshift(index);
+        node = node.parentElement.closest("li");
+      }
+      return path.join("-");
+    }
+
+    // Get a node by its path from localStorage
+    function getNodeByPath(path) {
+      const indices = path.split("-").map(Number);
+      let node = document.querySelector("#grandparent > li");
+      for (let i = 0; i < indices.length; i++) {
+        node = node.querySelectorAll(":scope > ul > li")[indices[i]];
+        if (!node) break;
+      }
+      return node;
+    }
+
+    // Load the previously selected node from localStorage
+    window.addEventListener("load", () => {
+      const path = localStorage.getItem
